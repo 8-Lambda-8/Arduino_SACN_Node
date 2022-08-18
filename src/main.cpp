@@ -40,7 +40,7 @@ void sacnDMXReceived(const byte* pbuff, int count) {
   if (packetUniverse == universe) {
     Serial.println("Send Universe DMX");
     for (uint16_t i = 0; i < 512; i++) {
-      DmxSimple.write(i, pbuff[126 + packetOffset + i]);
+      DmxSimple.write(i + 1, pbuff[126 + packetOffset + i]);
     }
   }
 }
