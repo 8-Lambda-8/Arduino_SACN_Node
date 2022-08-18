@@ -15,6 +15,13 @@
 #include <EEPROM.h>
 #include <EtherCard.h>
 
+#define debugon
+#ifdef debugon
+#define debug(...) serialprintf(__VA_ARGS__)
+#else
+#define debug(...)
+#endif
+
 static byte mymac[] = {0x10, 0x00, 0x00, 0x45, 0x08, 0x02};
 const char hostname[] = "sACN-Node-01";
 
@@ -29,16 +36,38 @@ BufferFiller bfill;
 
 uint8_t packetOffset = 42;
 
+size_t serialprintf(PGM_P format, ...) {
+  va_list arg;
+  va_start(arg, format);
+  char temp[64];
+  char* buffer = temp;
+  size_t len = vsnprintf(temp, sizeof(temp), format, arg);
+  va_end(arg);
+  if (len > sizeof(temp) - 1) {
+    buffer = new char[len + 1];
+    if (!buffer) {
+      return 0;
+    }
+    va_start(arg, format);
+    vsnprintf(buffer, len + 1, format, arg);
+    va_end(arg);
+  }
+  len = Serial.write((const uint8_t*)buffer, len);
+  if (buffer != temp) {
+    delete[] buffer;
+  }
+  return len;
+}
+
 void sacnDMXReceived(const byte* pbuff, int count) {
-  Serial.println("sacnDMXReceived");
+  debug("sacnDMXReceived\n");
   if (count > CHANNEL_COUNT) count = CHANNEL_COUNT;
   uint16_t packetUniverse = pbuff[113 + packetOffset];
   packetUniverse <<= 8;
   packetUniverse |= pbuff[114 + packetOffset];
-  Serial.print("recieved Universe: ");
-  Serial.println(packetUniverse);
+  debug("recieved Universe: %d\n", packetUniverse);
   if (packetUniverse == universe) {
-    Serial.println("Send Universe DMX");
+    debug("Send Universe DMX\n");
     for (uint16_t i = 0; i < 512; i++) {
       DmxSimple.write(i + 1, pbuff[126 + packetOffset + i]);
     }
@@ -46,30 +75,30 @@ void sacnDMXReceived(const byte* pbuff, int count) {
 }
 
 int checkACNHeaders(const byte* messagein, int messagelength) {
-  Serial.println("checkACNHeaders");
-  Serial.print("msg Length=");
-  Serial.println(messagelength);
+  debug("checkACNHeaders\n");
+  debug("msg Length=%d\n", messagelength);
 
   if (messagein[1 + packetOffset] == 0x10 && messagein[4 + packetOffset] == 0x41 &&
       messagein[12 + packetOffset] == 0x37) {
     // number of values plus start code
-    Serial.println("Header Check passed");
+    debug("Header Check passed\n");
 
     int addresscount =
         (byte)messagein[123 + packetOffset] * 256 + (byte)messagein[124 + packetOffset];
     return addresscount - 1;  // Return how many values are in the packet.
   }
-  Serial.println("Header Check failed");
+  debug("Header Check failed\n");
 
   return 0;
 }
 
-static void sACNPacket(uint16_t port, uint8_t ip[4], uint16_t src_port, const char* data, uint16_t len) {
-  Serial.println("Udp packet recieved");
+static void sACNPacket(uint16_t port, uint8_t ip[4], uint16_t src_port, const char* data,
+                       uint16_t len) {
+  debug("Udp packet recieved\n");
 
   // Make sure the packet is an E1.31 packet
   int count = checkACNHeaders(Ethernet::buffer, len);
-  Serial.println(count);
+  debug("channel Count: %d\n", count);
   if (count) {
     // It is so process the data to the LEDS
     sacnDMXReceived(Ethernet::buffer, count);
@@ -81,9 +110,7 @@ void setup() {
   DmxSimple.usePin(3);        // DMX output is pin 3
   DmxSimple.maxChannel(512);  // should be 512
 
-  Serial.println("");
-  Serial.println("");
-  Serial.println("start");
+  Serial.println(F("\n\nstart"));
 
   ether.begin(sizeof(Ethernet::buffer), mymac, 10);
 
@@ -92,14 +119,12 @@ void setup() {
 
   EEPROM.get(0, universe);
 
-  ether.printIp("My IP: ", ether.myip);
-  ether.printIp("Netmask: ", ether.netmask);
-  ether.printIp("GW IP: ", ether.gwip);
-  ether.printIp("DNS IP: ", ether.dnsip);
+  ether.printIp(F("My IP: "), ether.myip);
+  ether.printIp(F("Netmask: "), ether.netmask);
+  ether.printIp(F("GW IP: "), ether.gwip);
+  ether.printIp(F("DNS IP: "), ether.dnsip);
 
-  Serial.print("Universe: ");
-  Serial.println(universe);
-  Serial.println("");
+  debug("Universe: %d\n", universe);
 
   // Register listener
   ether.udpServerListenOnPort(&sACNPacket, 5568);
@@ -179,11 +204,8 @@ void loop() {
           }
           buf[i] = '\0';
 
-          Serial.println(buf);
-
           universe = atoi(buf);
-          Serial.print("universe: ");
-          Serial.println(universe);
+          debug("universe: %d\n", universe);
 
           EEPROM.put(0, universe);  // save universe
         }
