@@ -146,8 +146,17 @@ const char http_404[] PROGMEM =
     "Content-Type: text/html\r\n\r\n"
     "<h1>404 Not found</h1>";
 
+const char favicon[] PROGMEM =
+    "HTTP/1.0 200 OK\r\n"
+    "Content-Type: image/svg+xml\r\n\r\n"
+    "<?xml version='1.0' encoding='UTF-8' standalone='no'?>"
+    "<svg xmlns='http://www.w3.org/2000/svg' width='30px' height='30px'>"
+    "<text x='8' y='29' font-size='40'>λ</text>"
+    "</svg>";
+
 void homePage() {
   bfill.emit_p(PSTR("$F"
+                    "<link rel='icon' href='favicon.svg' type='image/svg+xml'>"
                     "<style>"
                     "body{"
                       "background: gray;"
@@ -224,7 +233,7 @@ void loop() {
         bfill.emit_p(http_redirect);
       } else if (data[0] == 'f') {
         // favicon
-        bfill.emit_p(http_OK);
+        bfill.emit_p(favicon);
       } else {
         // Page not found
         bfill.emit_p(http_404);
