@@ -61,7 +61,7 @@ int checkACNHeaders(const byte* messagein, int messagelength) {
   return 0;
 }
 
-static void sACNPacket(word port, byte ip[4], const char* data, word len) {
+static void sACNPacket(uint16_t port, uint8_t ip[4], uint16_t src_port, const char* data, uint16_t len) {
   Serial.println("Udp packet recieved");
 
   // Make sure the packet is an E1.31 packet
