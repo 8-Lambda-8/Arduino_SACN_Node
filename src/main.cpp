@@ -15,7 +15,7 @@
 #include <EEPROM.h>
 #include <EtherCard.h>
 
-static byte mymac[] = {0x01, 0x00, 0x00, 0x45, 0x08, 0x02};
+static byte mymac[] = {0x10, 0x00, 0x00, 0x45, 0x08, 0x02};
 const char hostname[] = "sACN-Node-01";
 
 uint16_t universe = 1;
