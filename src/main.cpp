@@ -15,10 +15,6 @@
 #include <EEPROM.h>
 #include <EtherCard.h>
 
-// enter desired universe and subnet  (sACN first universe is 1)
-#define DMX_SUBNET 0
-#define DMX_UNIVERSE 1  //**Start** universe
-
 static byte mymac[] = {0x01, 0x00, 0x00, 0x45, 0x08, 0x02};
 const char hostname[] = "sACN-Node-01";
 
@@ -26,8 +22,7 @@ uint16_t universe = 1;
 // 1 - 32767
 
 #define ETHERNET_BUFFER 700
-#define CHANNEL_COUNT 512  // because it divides by 3 nicely
-#define UNIVERSE_COUNT 1
+#define CHANNEL_COUNT 512
 
 byte Ethernet::buffer[ETHERNET_BUFFER];  // tcp/ip send and receive buffer
 BufferFiller bfill;
@@ -37,13 +32,12 @@ uint8_t packetOffset = 42;
 void sacnDMXReceived(const byte* pbuff, int count) {
   Serial.println("sacnDMXReceived");
   if (count > CHANNEL_COUNT) count = CHANNEL_COUNT;
-  byte b = pbuff[113 + packetOffset];  // DMX Subnet
-  if (b == DMX_SUBNET) {
-    b = pbuff[114 + packetOffset];  // DMX Universe
-    if (b >= DMX_UNIVERSE && b <= DMX_UNIVERSE + UNIVERSE_COUNT) {
-      for (uint16_t i = 0; i < 512; i++) {
-        DmxSimple.write(i, pbuff[126 + packetOffset + i]);
-      }
+  uint16_t packetUniverse = pbuff[113 + packetOffset];
+  packetUniverse <<= 8;
+  packetUniverse |= pbuff[114 + packetOffset];
+  if (packetUniverse == universe) {
+    for (uint16_t i = 0; i < 512; i++) {
+      DmxSimple.write(i, pbuff[126 + packetOffset + i]);
     }
   }
 }
