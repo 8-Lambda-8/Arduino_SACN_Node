@@ -148,20 +148,32 @@ const char http_404[] PROGMEM =
 
 void homePage() {
   bfill.emit_p(PSTR("$F"
+                    "<style>"
+                    "body{"
+                      "background: gray;"
+                      "font-family: sans-serif;"
+                      "text-align: center;"
+                    "}"
+                    "form{"
+                      "width: 200px;"
+                      "display: block;"
+                      "margin-left: auto;"
+                      "margin-right: auto;"
+                    "}"
+                    "input{"
+                      "border-radius: 15px;"
+                      "padding: 5px;"
+                    "}"
+                    "</style>"
                     "<form action='/'>"
-                    /* "<label for='hname'>Hostname (prefix):</label><br>"
-                    "<input type='text' id='hname' name='hname' value='$F'><br>"
 
-                    "<label for='id'>ID (hostname Sufix)</label><br>"
-                    "<input type='number' id='id' name='id' value='$F'><br>" */
-
-                    "<label for='uni'>Universe</label>"
+                    "<label for='uni'>Universe: </label>"
                     "<input type='number' min='1' max='32767' id='uni' "
                     "name='uni' value='$D'>"
 
-                    "<input type='submit' value='Submit'>"
+                    "<input type='submit' id='submit' value='Submit'>"
                     "</form>"),
-               http_OK, universe  //, "hostname"//, mymac[5], universe
+               http_OK, universe
 
   );
 }
